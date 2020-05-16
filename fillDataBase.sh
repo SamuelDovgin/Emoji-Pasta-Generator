@@ -1,3 +1,3 @@
 #!/bin/sh
-cd
-python redditAccessToken.py
+
+python redditAccess.py

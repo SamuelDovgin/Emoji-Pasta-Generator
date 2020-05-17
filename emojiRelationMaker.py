@@ -7,6 +7,7 @@
 import pandas as pd
 from emoji import UNICODE_EMOJI
 import nltk
+import re
 from nltk.corpus import stopwords
 import string
 import random
@@ -29,6 +30,7 @@ def emoji_list_split(input_string):
     final_string = ""
     # removes all punctuation
     input_string = input_string.translate(str.maketrans('', '', string.punctuation)).lower()
+    #input_string = re.sub('[\W_]+', '', input_string)
     for i in range(0,len(input_string)):
         if input_string[i] in UNICODE_EMOJI:
                 final_string += " " + input_string[i] + " "
@@ -94,16 +96,17 @@ def emoji_mapping(emoji_dict, input_string, max_emoji_len):
     norm_emoji_list = emoji_word_normalizer(input_string, max_emoji_len)
     for i in range(0,len(norm_emoji_list)-1):
         if not check_emoji_chars(norm_emoji_list[i]) and check_emoji_chars(norm_emoji_list[i+1]):
+            cleaned_word = re.sub('[\W_]+', '', norm_emoji_list[i])
             if norm_emoji_list[i] in emoji_dict.keys():
                 if norm_emoji_list[i+1] in emoji_dict[norm_emoji_list[i]].keys():
-                    emoji_dict[norm_emoji_list[i]][norm_emoji_list[i+1]] += 1
+                    emoji_dict[cleaned_word][norm_emoji_list[i+1]] += 1
                 else:
-                    emoji_dict[norm_emoji_list[i]][norm_emoji_list[i+1]] = 1
+                    emoji_dict[cleaned_word][norm_emoji_list[i+1]] = 1
             else:
-                emoji_dict[norm_emoji_list[i]] = {norm_emoji_list[i+1]:1}
+                emoji_dict[cleaned_word] = {norm_emoji_list[i+1]:1}
     return True
 
-def emoji_probability_maker(input_dictionary, minimum_likelihood, remove_stopwords):
+def emoji_probability_maker(input_dictionary, minimum_likelihood, remove_stopwords, minimum_emojis, maximum_emojis):
     emoji_mapping_dictionary = {}
     for i in input_dictionary.keys():
         emoji_mapping_dictionary[i] = {}
@@ -118,6 +121,19 @@ def emoji_probability_maker(input_dictionary, minimum_likelihood, remove_stopwor
         for j in input_dictionary[i].keys():
             if input_dictionary[i][j]/running_count >= minimum_likelihood:
                 emoji_mapping_dictionary[i][j] = input_dictionary[i][j]/new_running_count
+        if len(emoji_mapping_dictionary[i].keys()) == 0:
+            if len(input_dictionary[i].keys()) <=  minimum_emojis:
+                for j in input_dictionary[i].keys():
+                    emoji_mapping_dictionary[i][j] = input_dictionary[i][j]/new_running_count
+            else:
+                temp_new_running_count = 0
+                temp_dictionary = input_dictionary[i]
+                temp_dictionary = {k: v for k, v in sorted(temp_dictionary.items(), reverse = True, key=lambda item: item[1])}
+                for x in range(0, min(len(temp_dictionary.keys()), minimum_emojis)):
+                    temp_new_running_count += temp_dictionary[list(temp_dictionary.keys())[x]]
+                for x in range(0, min(len(temp_dictionary.keys()), minimum_emojis)):
+                    emoji_mapping_dictionary[i][list(temp_dictionary.keys())[x]] = temp_dictionary[list(temp_dictionary.keys())[x]]/temp_new_running_count
+
     if remove_stopwords:
         stopwords_no_apost = stopwords.words('english')
         for i in range(0,len(stopwords_no_apost)):
@@ -136,6 +152,10 @@ emoji_map = {}
 max_grouped_emojis = 3
 #prev on .10
 emoji_probability = .05
+# if there are none above 5% chance probability
+minimum_emojis = 2
+maximum_emoji = 5
+remove_stopwords = True
 # run through all comments and add to emoji_mapping
 
 completed_comments = []
@@ -162,7 +182,7 @@ for i in ['topEmojiPastaComments5000.csv', 'hotEmojiPastaComments5000.csv', 'new
 # run prev through a loop
 
 #probably save the following as a csv or somehow
-emoji_map_probability = emoji_probability_maker(emoji_map, emoji_probability, True)
+emoji_map_probability = emoji_probability_maker(emoji_map, emoji_probability, remove_stopwords, minimum_emojis, maximum_emoji)
 
 with open('emoji_mapping.json','w') as fp:
     json.dump(emoji_map_probability, fp)

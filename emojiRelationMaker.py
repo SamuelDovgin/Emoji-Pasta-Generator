@@ -95,8 +95,8 @@ def emoji_word_normalizer(input_string, max_emoji_len):
 def emoji_mapping(emoji_dict, input_string, max_emoji_len):
     norm_emoji_list = emoji_word_normalizer(input_string, max_emoji_len)
     for i in range(0,len(norm_emoji_list)-1):
-        if not check_emoji_chars(norm_emoji_list[i]) and check_emoji_chars(norm_emoji_list[i+1]):
-            cleaned_word = re.sub('[\W_]+', '', norm_emoji_list[i])
+        cleaned_word = re.sub('[\W_]+', '', norm_emoji_list[i])
+        if not check_emoji_chars(norm_emoji_list[i]) and check_emoji_chars(norm_emoji_list[i+1]) and cleaned_word != "":
             if norm_emoji_list[i] in emoji_dict.keys():
                 if norm_emoji_list[i+1] in emoji_dict[norm_emoji_list[i]].keys():
                     emoji_dict[cleaned_word][norm_emoji_list[i+1]] += 1
@@ -121,7 +121,7 @@ def emoji_probability_maker(input_dictionary, minimum_likelihood, remove_stopwor
         for j in input_dictionary[i].keys():
             if input_dictionary[i][j]/running_count >= minimum_likelihood:
                 emoji_mapping_dictionary[i][j] = input_dictionary[i][j]/new_running_count
-        if len(emoji_mapping_dictionary[i].keys()) == 0:
+        if len(emoji_mapping_dictionary[i].keys()):
             if len(input_dictionary[i].keys()) <=  minimum_emojis:
                 for j in input_dictionary[i].keys():
                     emoji_mapping_dictionary[i][j] = input_dictionary[i][j]/new_running_count
@@ -151,7 +151,7 @@ f.close() """
 emoji_map = {}
 max_grouped_emojis = 3
 #prev on .10
-emoji_probability = .05
+emoji_probability = .10
 # if there are none above 5% chance probability
 minimum_emojis = 2
 maximum_emoji = 5

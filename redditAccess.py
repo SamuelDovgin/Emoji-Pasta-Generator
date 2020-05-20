@@ -1,7 +1,7 @@
 import praw
 import pandas as pd
 
-type_of_post_sort = "hot"
+type_of_post_sort = "new"
 
 info = {}
 with open("info.txt") as f:
@@ -16,22 +16,22 @@ reddit = praw.Reddit(client_id = info['appid'],
                      username = info['username'],
                      password = info['password'])
 
-subreddit = reddit.subreddit('copypasta')
+subreddit = reddit.subreddit('emojipasta')
 
-count = 5000
+count = 100
 
-top_subreddit = subreddit.hot(limit=count)
+top_subreddit = subreddit.new(limit=count)
 
 #for submission in subreddit.top(limit=1):
 #    print(submission.title, submission.id)
 
 topics_dict = {"id":[],"title":[],"body":[]}
 
-pd.DataFrame(topics_dict).to_csv(type_of_post_sort + 'CopyPasta' + str(count) + '.csv', index=False) 
+pd.DataFrame(topics_dict).to_csv("reddit_posts/" + type_of_post_sort + 'EmojiPasta' + str(count) + '.csv', index=False) 
 
 comment_dict = {"id":[], "comment_body":[]}
 
-pd.DataFrame(comment_dict).to_csv(type_of_post_sort + 'CopyPastaComments' + str(count) + '.csv', index=False) 
+pd.DataFrame(comment_dict).to_csv("reddit_posts/" + type_of_post_sort + 'EmojiPastaComments' + str(count) + '.csv', index=False) 
 
 for submission in top_subreddit:
     topics_dict["title"].append(submission.title)
@@ -42,7 +42,7 @@ for submission in top_subreddit:
     topics_data = pd.DataFrame(topics_dict)
 
     # convert pd to append new submission to csv
-    topics_data.to_csv(type_of_post_sort + 'CopyPasta' + str(count) + '.csv', mode='a', index=False, header=False) 
+    topics_data.to_csv("reddit_posts/" + type_of_post_sort + 'EmojiPasta' + str(count) + '.csv', mode='a', index=False, header=False) 
     
     # reset dictionary
     topics_dict = {"id":[],"title":[],"body":[]}
@@ -53,7 +53,7 @@ for submission in top_subreddit:
             comment_dict["comment_body"].append(top_comments.body)
             comment_dict["id"].append(top_comments.id)
             comment_dict = pd.DataFrame(comment_dict)
-            comment_dict.to_csv(type_of_post_sort + 'CopyPastaComments' + str(count) + '.csv', mode='a', index=False, header=False) 
+            comment_dict.to_csv("reddit_posts/" + type_of_post_sort + 'EmojiPastaComments' + str(count) + '.csv', mode='a', index=False, header=False) 
             comment_dict = {"id":[], "comment_body":[]}
         except AttributeError:
             print("error :( on comment")

@@ -15,6 +15,8 @@ from nltk.corpus import stopwords
 import string
 import random
 import json
+import copy
+import os
 
 my_stop_words = ['me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you', "you're", "you've", "you'll", 
 "you'd", 'your', 'yours', 'yourself', 'yourselves', 
@@ -159,23 +161,25 @@ def emoji_mapping(emoji_dict, input_string, max_emoji_len):
     return True
 
 def nltk_word_forms_dictionary_refiner(input_dictionary):
-    secondary_input_dictionary = dict(input_dictionary)
+    secondary_input_dictionary = copy.deepcopy(input_dictionary)
     for i in input_dictionary.keys():
         current_word_forms = get_word_forms(i)
         for parts_of_speech in current_word_forms.keys():
             for word_form in current_word_forms[parts_of_speech]:
                 if word_form not in input_dictionary.keys():
                     secondary_input_dictionary[word_form] = {}
-    update_input_dictionary = dict(secondary_input_dictionary)
+    update_input_dictionary = copy.deepcopy(secondary_input_dictionary)
     for i in update_input_dictionary.keys():
         current_word_forms = get_word_forms(i)
-        for parts_of_speech in current_word_forms.keys():
+        for parts_of_speech in current_word_forms:
+            catch_repeated_words = [i]
             for word_form in current_word_forms[parts_of_speech]:
                 # this is a for loop through all the related words
-                if word_form in secondary_input_dictionary.keys():
+                if word_form in secondary_input_dictionary.keys() and word_form not in catch_repeated_words:
+                    catch_repeated_words.append(word_form)
                     for k in secondary_input_dictionary[word_form].keys():
                         # this forces the keys into a list each time
-                        if k in list(update_input_dictionary[i]):
+                        if k in list(update_input_dictionary[i].keys()):
                             update_input_dictionary[i][k] += secondary_input_dictionary[word_form][k]
                         else:
                             update_input_dictionary[i][k] = secondary_input_dictionary[word_form][k]
@@ -237,10 +241,12 @@ remove_stopwords = True
 completed_comments = []
 completed_submissions = []
 
+directory = os.fsencode("reddit_posts/posts/")
 # run the following through a loop
-for file_name in ['topEmojiPasta5000.csv', 'hotEmojiPasta5000.csv', 'newEmojiPasta5000.csv', 'controversialEmojiPasta5000.csv'
-, 'hotEmojiPasta500.csv', 'newEmojiPasta500.csv','newEmojiPasta100.csv']:
-    df = pd.read_csv("reddit_posts/" + file_name)
+for file_cur in os.listdir(directory):
+    file_name = os.fsdecode(file_cur)
+    print(file_name)
+    df = pd.read_csv("reddit_posts/posts/" + file_name)
     df = df.fillna("")
     for idx, i in df.iterrows():
         if i['id'] not in completed_submissions:
@@ -249,9 +255,12 @@ for file_name in ['topEmojiPasta5000.csv', 'hotEmojiPasta5000.csv', 'newEmojiPas
             completed_submissions.append(i['id'])
 
 # run the following through a loop
-for file_name in ['topEmojiPastaComments5000.csv', 'hotEmojiPastaComments5000.csv', 'newEmojiPastaComments5000.csv', 'controversialEmojiPastaComments5000.csv'
-, 'hotEmojiPastaComments500.csv', 'newEmojiPastaComments500.csv','newEmojiPastaComments100.csv']:
-    df = pd.read_csv("reddit_posts/" + file_name)
+directory = os.fsencode("reddit_posts/comments/")
+# run the following through a loop
+for file_cur in os.listdir(directory):
+    file_name = os.fsdecode(file_cur)
+    print(file_name)
+    df = pd.read_csv("reddit_posts/comments/" + file_name)
     df = df.fillna("")
     for idx, i in df.iterrows():
         if i['id'] not in completed_comments:

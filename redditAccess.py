@@ -3,6 +3,10 @@ import pandas as pd
 import sys
 from datetime import datetime
 
+
+# python redditAccess.py new 150
+# python redditAccess.py hot 100
+
 now = datetime.now()
 
 type_of_post_sort = sys.argv[1]

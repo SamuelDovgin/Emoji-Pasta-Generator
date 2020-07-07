@@ -1,5 +1,7 @@
 import boto3
 
+# python upload_map_s3.py
+
 #s3 = boto3.resource('s3')
 
 #for bucket in s3.buckets.all():

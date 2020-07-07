@@ -5,8 +5,13 @@ import json
 import string
 import random
 import datetime
+import requests
 
 # python emoji_reddit_bot.py
+
+# scp -i C:\Users\Temp\Documents\test_key_pair.pem C:\Users\Temp\Developer\Emoji-Pasta-Generator\emoji_reddit_bot.py ec2-user@ec2-3-90-147-253.compute-1.amazonaws.com:/home/ec2-user
+# scp -i C:\Users\Temp\Documents\test_key_pair.pem C:\Users\Temp\Developer\Emoji-Pasta-Generator\posts_replied_to.txt ec2-user@ec2-3-90-147-253.compute-1.amazonaws.com:/home/ec2-user
+# scp -i C:\Users\Temp\Documents\test_key_pair.pem C:\Users\Temp\Developer\Emoji-Pasta-Generator\info2.txt ec2-user@ec2-3-90-147-253.compute-1.amazonaws.com:/home/ec2-user
 
 info = {}
 with open("info2.txt") as f:
@@ -70,10 +75,8 @@ def emoji_pasta_maker(raw_string, emoji_prob_map):
             final_emoji_pasta += raw_string_split[i] + " "
     return final_emoji_pasta
 
-emoji_map_probability = {}
-with open('emoji_mapping.json','r', encoding="utf8") as fp:
-    emoji_map_probability = json.load(fp)
-fp.close()
+emoji_map_json = requests.get('https://emoji-map.s3.amazonaws.com/emoji_mapping.json').text
+emoji_map_probability = json.loads(emoji_map_json)
 
 with open("posts_replied_to.txt", "r") as f:
     posts_replied_to = f.read()
@@ -92,8 +95,11 @@ def process_submission(submission):
             for i in content:
                 output += emoji_pasta_maker(i,emoji_map_probability)
                 output += '\n'
-            output = output[:9800]
-            output += '\n'
+            if(len(output) > 9800):
+                output = output[:9800]
+                output += '\n\n'
+            else:
+                output += '\n'
             output += emoji_pasta_maker("Message the", emoji_map_probability) + "["
             # Below remove a space off of the emojified text (as "Bot" always has an emoji and space after)
             output += emoji_pasta_maker("Emojify Facebook Messenger Bot", emoji_map_probability)[:-1] + "](https://www.messenger.com/t/104121844644171) "

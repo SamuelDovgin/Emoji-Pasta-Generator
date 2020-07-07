@@ -18,6 +18,8 @@ import json
 import copy
 import os
 
+# python emojiRelationMaker.py
+
 my_stop_words = ['me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', "you're", "you've", "you'll", 
 "you'd", 'yours', 'yourself', 'yourselves', 
 'it', "it's", 'its', 'itself', 'they', 'them', 'their', 'theirs', 'themselves', 'what', 'which', 'who', 
@@ -133,6 +135,7 @@ def emoji_word_normalizer(input_string, max_emoji_len):
     return merged_emoji_string
 
 # returns dictionary with words associated with emojis afterwards (this can be improved with more robust algos)
+# maybe think about limiting the number of pairings you can achieve with just one post. to prevent it from swaying results too drastically
 def emoji_mapping(emoji_dict, input_string, max_emoji_len):
     norm_emoji_list = emoji_word_normalizer(input_string, max_emoji_len)
     for i in range(0,len(norm_emoji_list)-1):
@@ -201,7 +204,9 @@ def emoji_probability_maker(input_dictionary, minimum_likelihood, remove_stopwor
         for j in input_dictionary[i].keys():
             if input_dictionary[i][j]/running_count >= minimum_likelihood:
                 emoji_mapping_dictionary[i][j] = input_dictionary[i][j]/new_running_count
-        if len(emoji_mapping_dictionary[i].keys()) == 0:
+        #its possible only the stuff below this is necessary? because we can just rely on the top minimum for each word which will be better possibly
+        #if it is less than the min then the others in order from most to least can be used?
+        if len(emoji_mapping_dictionary[i].keys()) <=  minimum_emojis:
             if len(input_dictionary[i].keys()) <=  minimum_emojis:
                 for j in input_dictionary[i].keys():
                     emoji_mapping_dictionary[i][j] = input_dictionary[i][j]/new_running_count
@@ -231,7 +236,7 @@ f.close() """
 emoji_map = {}
 max_grouped_emojis = 3
 #prev on .10
-emoji_probability = 0.15
+emoji_probability = 0.1
 # if there are none above 5% chance probability
 minimum_emojis = 2
 maximum_emoji = 5

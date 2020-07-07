@@ -24,7 +24,7 @@ my_stop_words = ['me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', "you're
 "you'd", 'yours', 'yourself', 'yourselves', 
 'it', "it's", 'its', 'itself', 'they', 'them', 'their', 'theirs', 'themselves', 'what', 'which', 'who', 
 'whom', 'this', 'that', "that'll", 'these', 'those', 'am', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 
-'has', 'had', 'having', 'do', 'does', 'did', 'doing', 'a', 'an', 'the', 'and', 'but', 'if', 'or', 'because', 'as', 
+'has', 'had', 'having', 'do', 'does', 'did', 'doing', 'a', 'an', 'the', 'and', 'if', 'or', 'because', 'as', 
 'until', 'while', 'of', 'at', 'by', 'for', 'with', 'about', 'against', 'between', 'into', 'through', 'during', 
 'to', 'from', 'in', 'out', 'on', 'off', 'further', 'would', 'could' ,
 'then', 'once', 'here', 'there', 'where', 'how', 'any', 'both', 'each', 'few', 'more', 'most', 

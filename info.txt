@@ -1,5 +1,0 @@
-secret OEbOMmqlzOLvSBww_Fi8IfwL2EU
-appid tg7emkHIi5Ggow
-appname emojipasta-generator
-username theawesome313
-password awesomethe313

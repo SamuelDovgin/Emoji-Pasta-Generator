@@ -178,16 +178,38 @@ function emoji_pasta_maker(raw_string, emoji_prob_map){
 }
 
 function sendTextMessage(recipientId, messageText) {
-  var emoji_message = emoji_pasta_maker(messageText,maptest)
-  var messageData = {
-    recipient: {
-      id: recipientId
-    },
-    message: {
-      text: emoji_message
+  if(messageText.length < 64000) {
+    var emoji_message = emoji_pasta_maker(messageText,maptest);
+    var message_data_list = []
+    var start_character = 0
+    const messenger_max_char_limit = 2000
+    while(start_character < emoji_message.length) {
+      var segmented_string = emoji_message.substring(start_character, start_character + messenger_max_char_limit)
+      var messageData = {
+        recipient: {
+          id: recipientId
+        },
+        message: {
+          text: segmented_string
+        }
+      };
+      message_data_list.push(messageData)
+      start_character += messenger_max_char_limit
     }
-  };
-  callSendAPI(messageData);
+    message_data_list.forEach(function(item) {
+      callSendAPI(item);
+    });
+  } else {
+    var messageData = {
+      recipient: {
+        id: recipientId
+      },
+      message: {
+        text: "Message ✉ too long 🍆."
+      }
+    };
+    callSendAPI(messageData);
+  }
 }
 function callSendAPI(messageData) {
   var body = JSON.stringify(messageData);

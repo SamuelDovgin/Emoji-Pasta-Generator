@@ -100,7 +100,8 @@ def process_submission(submission):
                 output += '\n\n'
             else:
                 output += '\n'
-            output += emoji_pasta_maker("Message the", emoji_map_probability) + "["
+            output += emoji_pasta_maker("Message ", emoji_map_probability) + "["
+            output += emoji_pasta_maker("u/Emojify_Creator myself ", emoji_map_probability)[:-1] + "](https://www.reddit.com/message/compose/?to=Emojify_Creator), or the ["
             # Below remove a space off of the emojified text (as "Bot" always has an emoji and space after)
             output += emoji_pasta_maker("Emojify Facebook Messenger Bot", emoji_map_probability)[:-1] + "](https://www.messenger.com/t/104121844644171) "
             output += emoji_pasta_maker("to Generate Emoji Pastas Like This!", emoji_map_probability)

@@ -1,7 +1,24 @@
-import requests
-import json
+import praw
+import pprint
+info = {}
+with open("info2.txt") as f:
+    for line in f:
+        (key, val) = line.split()
+        info[key] = val
+f.close()
+reddit = praw.Reddit(client_id = info['appid'],
+                     client_secret = info['secret'],
+                     user_agent = info['appname'],
+                     username = info['username'],
+                     password = info['password'])
 
-x = requests.get('https://emoji-map.s3.amazonaws.com/emoji_mapping.json').text
-y = json.loads(x)
+# if item.type == "username_mention"
 
-print(y['dog'])
+for item in reddit.inbox.stream():
+    if item.type == "username_mention":
+        parent_object_type = item.parent_id[:2]
+        parent = item.parent()
+        if parent_object_type == "t1":
+            print(parent.body)
+        elif parent_object_type == "t3":
+            print(parent.selftext)

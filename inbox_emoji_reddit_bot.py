@@ -83,6 +83,85 @@ with open("messages_replied_to.txt", "r") as f:
     messages_replied_to = messages_replied_to.split("\n")
     messages_replied_to = list(filter(None, messages_replied_to))
 
+with open("posts_replied_to.txt", "r") as f:
+    posts_replied_to = f.read()
+    posts_replied_to = posts_replied_to.split("\n")
+    posts_replied_to = list(filter(None, posts_replied_to))
+
+MAX_COMMENT_LEN = 9700
+
+def add_links(input_string):
+    modified_string = input_string
+    modified_string += '\n\n'
+    modified_string += emoji_pasta_maker("Comment Emojify's ", emoji_map_probability)  + "username: "
+    modified_string += emoji_pasta_maker("\"u/Emojify_Creator\" on any post or reply, message ", emoji_map_probability) + "["
+    modified_string += emoji_pasta_maker("u/Emojify_Creator directly", emoji_map_probability)[:-1] + "](https://www.reddit.com/message/compose/?to=Emojify_Creator), "
+    modified_string += emoji_pasta_maker("or chat with the ", emoji_map_probability) + "["
+    # Below remove a space off of the emojified text (as "Bot" always has an emoji and space after)
+    modified_string += emoji_pasta_maker("Emojify Facebook Messenger Bot", emoji_map_probability)[:-1] + "](https://www.messenger.com/t/104121844644171) "
+    modified_string += emoji_pasta_maker("to Generate Emoji Pastas Like This!", emoji_map_probability)
+    return modified_string
+
+def process_user_mention(message):
+    parent_object_type = message.parent_id[:2]
+    parent = message.parent()
+    # below if runs if the object is a submission
+    if parent_object_type == "t3":
+        if message.id not in posts_replied_to:
+            initial_submission_time_pretty = datetime.datetime.fromtimestamp(
+                    int(message.created_utc)
+                ).strftime('%Y-%m-%d %H:%M:%S')
+            print(message.id + " " + initial_submission_time_pretty)
+            if parent.selftext != "":
+                content = parent.selftext.split('\n')
+                output = ""
+                for idx, val in enumerate(content):
+                    output += emoji_pasta_maker(val, emoji_map_probability)
+                    if idx != len(content) - 1:
+                        output += '\n'
+                if len(output) > MAX_COMMENT_LEN:
+                    starting_idx = 0
+                    first_comment = True
+                    prev_comment_object = None
+                    while starting_idx < len(output):
+                        if first_comment:
+                            prev_comment_object = message.reply(add_links(output[:MAX_COMMENT_LEN]))
+                            first_comment = False
+                            starting_idx += MAX_COMMENT_LEN
+                        else:
+                            prev_comment_object = prev_comment_object.reply(add_links(output[starting_idx:starting_idx+MAX_COMMENT_LEN]))
+                            starting_idx += MAX_COMMENT_LEN
+                else:
+                    message.reply(add_links(output))
+            elif parent.title != "":
+                output = ""
+                output += emoji_pasta_maker(parent.title, emoji_map_probability)
+                message.reply(add_links(output))
+            posts_replied_to.append(message.id)
+            with open("posts_replied_to.txt", "w") as f:
+                for post_id in posts_replied_to:
+                    f.write(post_id + "\n")
+    # below if runs if the object is a comment
+    elif parent_object_type == "t1":
+        if message.id not in messages_replied_to:
+            initial_submission_time_pretty = datetime.datetime.fromtimestamp(
+                    int(message.created_utc)
+                ).strftime('%Y-%m-%d %H:%M:%S')
+            print(message.id + " " + initial_submission_time_pretty)
+            if(parent.body != ""):
+                content = parent.body.split('\n')
+                output = ""
+                for i in content:
+                    output += emoji_pasta_maker(i,emoji_map_probability)
+                    output += '\n'
+                if(len(output) > MAX_COMMENT_LEN):
+                    output = output[:MAX_COMMENT_LEN]
+                message.reply(add_links(output))
+            messages_replied_to.append(message.id)
+            with open("messages_replied_to.txt", "w") as f:
+                for post_id in messages_replied_to:
+                    f.write(post_id + "\n")
+
 def process_message(message):
     if message.id not in messages_replied_to:
         initial_submission_time_pretty = datetime.datetime.fromtimestamp(
@@ -106,3 +185,5 @@ def process_message(message):
 for message in reddit.inbox.stream():
     if(not message.was_comment):
         process_message(message)
+    if message.type == "username_mention":
+        process_user_mention(message)

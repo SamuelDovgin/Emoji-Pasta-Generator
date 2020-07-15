@@ -78,10 +78,24 @@ def emoji_pasta_maker(raw_string, emoji_prob_map):
 emoji_map_json = requests.get('https://emoji-map.s3.amazonaws.com/emoji_mapping.json').text
 emoji_map_probability = json.loads(emoji_map_json)
 
+def add_links(input_string):
+    modified_string = input_string
+    modified_string += '\n\n'
+    modified_string += emoji_pasta_maker("Comment Emojify's ", emoji_map_probability)  + "username: "
+    modified_string += emoji_pasta_maker("\"u/Emojify_Creator\" on any post or reply, message ", emoji_map_probability) + "["
+    modified_string += emoji_pasta_maker("u/Emojify_Creator directly", emoji_map_probability)[:-1] + "](https://www.reddit.com/message/compose/?to=Emojify_Creator), "
+    modified_string += emoji_pasta_maker("or chat with the ", emoji_map_probability) + "["
+    # Below remove a space off of the emojified text (as "Bot" always has an emoji and space after)
+    modified_string += emoji_pasta_maker("Emojify Facebook Messenger Bot", emoji_map_probability)[:-1] + "](https://www.messenger.com/t/104121844644171) "
+    modified_string += emoji_pasta_maker("to Generate Emoji Pastas Like This!", emoji_map_probability)
+    return modified_string
+
 with open("posts_replied_to.txt", "r") as f:
     posts_replied_to = f.read()
     posts_replied_to = posts_replied_to.split("\n")
     posts_replied_to = list(filter(None, posts_replied_to))
+
+MAX_COMMENT_LEN = 9700
 
 def process_submission(submission):
     if submission.id not in posts_replied_to:
@@ -89,23 +103,31 @@ def process_submission(submission):
                 int(submission.created_utc)
             ).strftime('%Y-%m-%d %H:%M:%S')
         print(submission.id + " " + initial_submission_time_pretty)
-        if(submission.selftext != ""):
+        if submission.selftext != "":
             content = submission.selftext.split('\n')
             output = ""
-            for i in content:
-                output += emoji_pasta_maker(i,emoji_map_probability)
-                output += '\n'
-            if(len(output) > 9800):
-                output = output[:9800]
-                output += '\n\n'
+            for idx, val in enumerate(content):
+                output += emoji_pasta_maker(val, emoji_map_probability)
+                if idx != len(content) - 1:
+                    output += '\n'
+            if len(output) > MAX_COMMENT_LEN:
+                starting_idx = 0
+                first_comment = True
+                prev_comment_object = None
+                while starting_idx < len(output):
+                    if first_comment:
+                        prev_comment_object = submission.reply(add_links(output[:MAX_COMMENT_LEN]))
+                        first_comment = False
+                        starting_idx += MAX_COMMENT_LEN
+                    else:
+                        prev_comment_object = prev_comment_object.reply(add_links(output[starting_idx:starting_idx+MAX_COMMENT_LEN]))
+                        starting_idx += MAX_COMMENT_LEN
             else:
-                output += '\n'
-            output += emoji_pasta_maker("Message ", emoji_map_probability) + "["
-            output += emoji_pasta_maker("u/Emojify_Creator myself ", emoji_map_probability)[:-1] + "](https://www.reddit.com/message/compose/?to=Emojify_Creator), or the ["
-            # Below remove a space off of the emojified text (as "Bot" always has an emoji and space after)
-            output += emoji_pasta_maker("Emojify Facebook Messenger Bot", emoji_map_probability)[:-1] + "](https://www.messenger.com/t/104121844644171) "
-            output += emoji_pasta_maker("to Generate Emoji Pastas Like This!", emoji_map_probability)
-            submission.reply(output)
+                submission.reply(add_links(output))
+        elif submission.title != "":
+            output = ""
+            output += emoji_pasta_maker(submission.title, emoji_map_probability)
+            submission.reply(add_links(output))
         posts_replied_to.append(submission.id)
         with open("posts_replied_to.txt", "w") as f:
             for post_id in posts_replied_to:

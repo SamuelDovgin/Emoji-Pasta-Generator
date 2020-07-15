@@ -246,6 +246,7 @@ remove_stopwords = True
 completed_comments = []
 completed_submissions = []
 
+
 directory = os.fsencode("reddit_posts/posts/")
 # run the following through a loop
 for file_cur in os.listdir(directory):
@@ -258,12 +259,15 @@ for file_cur in os.listdir(directory):
             emoji_mapping(emoji_map, i['title'], max_grouped_emojis)
             emoji_mapping(emoji_map, i['body'], max_grouped_emojis)
             completed_submissions.append(i['id'])
+    print(emoji_map["garbage"])
 
 # run the following through a loop
 directory = os.fsencode("reddit_posts/comments/")
 # run the following through a loop
 for file_cur in os.listdir(directory):
     file_name = os.fsdecode(file_cur)
+    if file_name == "topEmojiPastaComments5000.csv" or file_name == "topEmojiPastaComments10000_2020-07-11-21-16.csv" :
+        continue
     print(file_name)
     df = pd.read_csv("reddit_posts/comments/" + file_name)
     df = df.fillna("")
@@ -271,7 +275,22 @@ for file_cur in os.listdir(directory):
         if i['id'] not in completed_comments:
             emoji_mapping(emoji_map, i['comment_body'], max_grouped_emojis)
             completed_comments.append(i['id'])
+    print(emoji_map["garbage"])
 # run prev through a loop
+
+'''
+directory = os.fsencode("reddit_posts/test_post/")
+# run the following through a loop
+for file_cur in os.listdir(directory):
+    file_name = os.fsdecode(file_cur)
+    print(file_name)
+    df = pd.read_csv("reddit_posts/test_post/" + file_name)
+    df = df.fillna("")
+    for idx, i in df.iterrows():
+        if i['id'] not in completed_comments:
+            emoji_mapping(emoji_map, i['comment_body'], max_grouped_emojis)
+            completed_comments.append(i['id'])
+'''
 
 with open('emoji_mapping_initial.json','w') as fp:
     json.dump(emoji_map, fp)

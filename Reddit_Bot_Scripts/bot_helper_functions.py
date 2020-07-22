@@ -6,10 +6,11 @@ import string
 import random
 import datetime
 import requests
+import pickle
 
 MAX_COMMENT_LEN = 10000
-# FIX THIS TO HAVE EMOJI MAP LOADED HERE TBH MAYBE?
-# MAYBE ALSO SEND AN INITIAL MESSAGE TO MESSAGERS SO YOU DONT HAVE TO REPEATEDLY SEND MORE LINKS 
+
+# scp -i C:\Users\Temp\Documents\test_key_pair.pem C:\Users\Temp\Developer\Emoji-Pasta-Generator\Reddit_Bot_Scripts\bot_helper_functions.py ec2-user@ec2-35-171-88-15.compute-1.amazonaws.com:/home/ec2-user
 
 def find_punct_ending_index(input_string):
     punctuation_start = -1
@@ -58,16 +59,22 @@ def emoji_pasta_maker(raw_string, emoji_prob_map):
             final_emoji_pasta += raw_string_split[i] + " "
     return final_emoji_pasta
 
-def link_reply(reply_object, emoji_map_probability):
+""" def link_reply(reply_object, emoji_map_probability):
     output_string = ""
-    output_string += emoji_pasta_maker("Comment Emojify's ", emoji_map_probability)  + "username: "
+    output_string += emoji_pasta_maker("Comment ", emoji_map_probability)  + "\"!emojify\" or "
     output_string += emoji_pasta_maker("\"u/Emojify_Creator\" on any post or reply, message ", emoji_map_probability) + "["
     output_string += emoji_pasta_maker("u/Emojify_Creator directly", emoji_map_probability)[:-1] + "](https://www.reddit.com/message/compose/?to=Emojify_Creator), "
     output_string += emoji_pasta_maker("or chat with the ", emoji_map_probability) + "["
     # Below remove a space off of the emojified text (as "Bot" always has an emoji and space after)
     output_string += emoji_pasta_maker("Emojify Facebook Messenger Bot", emoji_map_probability)[:-1] + "](https://www.messenger.com/t/104121844644171) "
     output_string += emoji_pasta_maker("to Generate Emoji Pastas Like This!", emoji_map_probability)
-    reply_object.reply(output_string)
+    #reply_object.reply(output_string) """
+
+LINK_NOTE = "\n\n^(To Emojify 😃: [message ✉ me](https://www.reddit.com/message/compose/?to=Emojify_Creator) \| comment 💬 \"!emojify\" \| comment 🗣️ )^([u\/Emojify_Creator](/user/Emojify_Creator))"
+
+#LINK_NOTE = '\n\n^(To Emojify 😃: comment 💬 "!emojify" Or [message ✉ me](https://www.reddit.com/message/compose/?to=Emojify_Creator))'
+
+LINK_NOTE_LENGTH = len(LINK_NOTE)
 
 def get_reddit_object(login_info_location):
     info = {}
@@ -98,28 +105,38 @@ def get_emoji_map():
 
 # is_comment vs is_message
 def send_reply(text, initial_reply_object, is_comment, emoji_map_probability):
-    content = text.split('\n')
+    content = text.replace("&#x200B;", '').split('\n')
     output = ""
     for idx, val in enumerate(content):
         output += emoji_pasta_maker(val, emoji_map_probability)
         if idx != len(content) - 1:
             output += '\n'
-    if len(output) > MAX_COMMENT_LEN:
+    if (is_comment and len(output) > (MAX_COMMENT_LEN - LINK_NOTE_LENGTH)) or (not is_comment and len(output) > MAX_COMMENT_LEN):
         starting_idx = 0
         prev_comment_object = initial_reply_object
         sent_initial_reply = False
         while starting_idx < len(output):
-            comment_object = prev_comment_object.reply(output[starting_idx:starting_idx+MAX_COMMENT_LEN])
+            string_to_reply = output[starting_idx : starting_idx + MAX_COMMENT_LEN]
+            if not sent_initial_reply and is_comment:
+                string_to_reply = output[starting_idx : starting_idx + MAX_COMMENT_LEN - LINK_NOTE_LENGTH] + LINK_NOTE
+            comment_object = prev_comment_object.reply(string_to_reply)
+
             if is_comment:
                 prev_comment_object = comment_object
+
             if not sent_initial_reply and is_comment:
-                link_reply(prev_comment_object, emoji_map_probability)
+                starting_idx += MAX_COMMENT_LEN - LINK_NOTE_LENGTH
                 sent_initial_reply = True
-            starting_idx += MAX_COMMENT_LEN
+            else:
+                starting_idx += MAX_COMMENT_LEN
     else:
-        comment_object = initial_reply_object.reply(output)
         if is_comment:
-            link_reply(comment_object, emoji_map_probability)
+            initial_reply_object.reply(output + LINK_NOTE)
+        else:
+            initial_reply_object.reply(output)
+
+def check_banned_muted(subreddit):
+    return subreddit.user_is_banned or subreddit.user_is_muted
 
 def pretty_print_id_time(object_input):
     initial_submission_time_pretty = datetime.datetime.fromtimestamp(
@@ -127,7 +144,17 @@ def pretty_print_id_time(object_input):
         ).strftime('%Y-%m-%d %H:%M:%S')
     print(object_input.id + " " + initial_submission_time_pretty)
 
-def write_object_to_file(file_path, object_to_write):
-    with open(file_path, "w") as f:
-        for post_id in object_to_write:
-            f.write(post_id + "\n")
+def load_object_from_file(file_path):
+    with open(file_path, "rb") as f:
+        objects_replied_to = pickle.load(f)
+    return objects_replied_to
+
+def append_object_to_file(file_path, object_to_write):
+    start_set = load_object_from_file(file_path)
+    combined_set = start_set | object_to_write
+    with open(file_path, "wb") as f:
+        pickle.dump(combined_set, f, pickle.HIGHEST_PROTOCOL)
+
+def save_object_to_file(file_path, object_to_write):
+    with open(file_path, "wb") as f:
+        pickle.dump(object_to_write, f, pickle.HIGHEST_PROTOCOL)

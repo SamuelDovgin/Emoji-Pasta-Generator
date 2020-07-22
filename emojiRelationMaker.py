@@ -189,6 +189,16 @@ def nltk_word_forms_dictionary_refiner(input_dictionary):
     return update_input_dictionary
 
 
+def emoji_map_editor(input_dictionary, edit_dictionary):
+    edited_emoji_map = copy.deepcopy(input_dictionary)
+    for i in edit_dictionary.keys():
+        if i in edited_emoji_map.keys():
+            for j in edit_dictionary[i].keys():
+                # if edit dictionary has false for a certain word emoji pairing set the count value to 0
+                if j in edited_emoji_map[i].keys() and not edit_dictionary[i][j]:
+                    edited_emoji_map[i][j] = 0
+    return edited_emoji_map
+
 def emoji_probability_maker(input_dictionary, minimum_likelihood, remove_stopwords, minimum_emojis, maximum_emojis):
     emoji_mapping_dictionary = {}
     for i in input_dictionary.keys():
@@ -301,8 +311,17 @@ updated_emoji_map = nltk_word_forms_dictionary_refiner(emoji_map)
 with open('emoji_mapping_secondary.json','w') as fp:
     json.dump(updated_emoji_map, fp)
 
+emoji_edits = {}
+with open('emoji_edits.json','r', encoding="utf8") as fp:
+    emoji_edits = json.load(fp)
+fp.close()
+edited_emoji_map = emoji_map_editor(updated_emoji_map, emoji_edits)
+
+with open('edited_emoji_mapping.json','w') as fp:
+    json.dump(edited_emoji_map, fp)
+
 #probably save the following as a csv or somehow
-emoji_map_probability = emoji_probability_maker(updated_emoji_map, emoji_probability, remove_stopwords, minimum_emojis, maximum_emoji)
+emoji_map_probability = emoji_probability_maker(edited_emoji_map, emoji_probability, remove_stopwords, minimum_emojis, maximum_emoji)
 
 with open('emoji_mapping.json','w') as fp:
     json.dump(emoji_map_probability, fp)

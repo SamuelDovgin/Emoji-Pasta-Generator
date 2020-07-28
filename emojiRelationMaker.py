@@ -17,8 +17,16 @@ import random
 import json
 import copy
 import os
+import requests
 
 # python emojiRelationMaker.py
+
+#POSTS_DIRECTORY = "reddit_posts/posts/"
+#COMMENTS_DIRECTORY = "reddit_posts/comments/"
+#COMMENT_BODY_ATTRIBUTE_NAME = "comment_body"
+POSTS_DIRECTORY = "push_shift_reddit_posts/posts/"
+COMMENTS_DIRECTORY = "push_shift_reddit_posts/comments/"
+COMMENT_BODY_ATTRIBUTE_NAME = "body"
 
 my_stop_words = ['me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', "you're", "you've", "you'll", 
 "you'd", 'yours', 'yourself', 'yourselves', 
@@ -141,9 +149,9 @@ def emoji_mapping(emoji_dict, input_string, max_emoji_len):
     for i in range(0,len(norm_emoji_list)-1):
         #cleaned_word = norm_emoji_list[i]
         cleaned_word = re.sub('[\W_]+', '', norm_emoji_list[i])
-        if not check_emoji_chars(norm_emoji_list[i]) and check_emoji_chars(norm_emoji_list[i+1]) and cleaned_word != "":
-            if norm_emoji_list[i] in emoji_dict.keys():
-                if norm_emoji_list[i+1] in emoji_dict[norm_emoji_list[i]].keys():
+        if not check_emoji_chars(cleaned_word) and check_emoji_chars(norm_emoji_list[i+1]) and cleaned_word != "":
+            if cleaned_word in emoji_dict.keys():
+                if norm_emoji_list[i+1] in emoji_dict[cleaned_word].keys():
                     emoji_dict[cleaned_word][norm_emoji_list[i+1]] += 1
                 else:
                     emoji_dict[cleaned_word][norm_emoji_list[i+1]] = 1
@@ -188,15 +196,23 @@ def nltk_word_forms_dictionary_refiner(input_dictionary):
                             update_input_dictionary[i][k] = secondary_input_dictionary[word_form][k]
     return update_input_dictionary
 
-
+# select from secondary
+# still remove the false from initial mapping and add points to the true ones too?
 def emoji_map_editor(input_dictionary, edit_dictionary):
     edited_emoji_map = copy.deepcopy(input_dictionary)
     for i in edit_dictionary.keys():
+        #print(i)
         if i in edited_emoji_map.keys():
             for j in edit_dictionary[i].keys():
                 # if edit dictionary has false for a certain word emoji pairing set the count value to 0
                 if j in edited_emoji_map[i].keys() and not edit_dictionary[i][j]:
+                    #print(j)
+                    #print(edited_emoji_map[i][j])
                     edited_emoji_map[i][j] = 0
+                    #print(edited_emoji_map[i][j])
+                # IF IT IS THERE MAYBE ADD SOME POINTS FOR THE TRUE EMOJI BECAUSE IT WAS HUMAN REVIEWED
+                # Since this is done twice somehow only do it once?
+                # add a param that adds points and only do it on the second run after the nlp adds words?
     return edited_emoji_map
 
 def emoji_probability_maker(input_dictionary, minimum_likelihood, remove_stopwords, minimum_emojis, maximum_emojis):
@@ -206,11 +222,16 @@ def emoji_probability_maker(input_dictionary, minimum_likelihood, remove_stopwor
         running_count = 0
         for j in input_dictionary[i].keys():
             running_count += input_dictionary[i][j]
+        if running_count == 0:
+            continue
         # now remove emojis below threshold
         new_running_count = 0
+
         for j in input_dictionary[i].keys():
             if input_dictionary[i][j]/running_count >= minimum_likelihood:
                 new_running_count += input_dictionary[i][j]
+        if new_running_count == 0:
+            continue
         for j in input_dictionary[i].keys():
             if input_dictionary[i][j]/running_count >= minimum_likelihood:
                 emoji_mapping_dictionary[i][j] = input_dictionary[i][j]/new_running_count
@@ -257,35 +278,35 @@ completed_comments = []
 completed_submissions = []
 
 
-directory = os.fsencode("reddit_posts/posts/")
+directory = os.fsencode(POSTS_DIRECTORY)
 # run the following through a loop
 for file_cur in os.listdir(directory):
     file_name = os.fsdecode(file_cur)
     print(file_name)
-    df = pd.read_csv("reddit_posts/posts/" + file_name)
+    df = pd.read_csv(POSTS_DIRECTORY + file_name)
     df = df.fillna("")
     for idx, i in df.iterrows():
         if i['id'] not in completed_submissions:
             emoji_mapping(emoji_map, i['title'], max_grouped_emojis)
             emoji_mapping(emoji_map, i['body'], max_grouped_emojis)
             completed_submissions.append(i['id'])
-    print(emoji_map["garbage"])
+    if "garbage" in emoji_map.keys():
+        print(emoji_map["garbage"], str(len(emoji_map.keys())))
 
 # run the following through a loop
-directory = os.fsencode("reddit_posts/comments/")
+directory = os.fsencode(COMMENTS_DIRECTORY)
 # run the following through a loop
 for file_cur in os.listdir(directory):
     file_name = os.fsdecode(file_cur)
-    if file_name == "topEmojiPastaComments5000.csv" or file_name == "topEmojiPastaComments10000_2020-07-11-21-16.csv" :
-        continue
     print(file_name)
-    df = pd.read_csv("reddit_posts/comments/" + file_name)
+    df = pd.read_csv(COMMENTS_DIRECTORY + file_name)
     df = df.fillna("")
     for idx, i in df.iterrows():
         if i['id'] not in completed_comments:
-            emoji_mapping(emoji_map, i['comment_body'], max_grouped_emojis)
+            emoji_mapping(emoji_map, i[COMMENT_BODY_ATTRIBUTE_NAME], max_grouped_emojis)
             completed_comments.append(i['id'])
-    print(emoji_map["garbage"])
+    if "garbage" in emoji_map.keys():
+        print(emoji_map["garbage"], str(len(emoji_map.keys())))
 # run prev through a loop
 
 '''
@@ -305,23 +326,28 @@ for file_cur in os.listdir(directory):
 with open('emoji_mapping_initial.json','w') as fp:
     json.dump(emoji_map, fp)
 
-# add counts to similar words
-updated_emoji_map = nltk_word_forms_dictionary_refiner(emoji_map)
+emoji_edits_json = requests.get('https://emoji-map-edits.s3.amazonaws.com/emoji_edits.json').text
+emoji_edits = json.loads(emoji_edits_json)
+edited_emoji_map = emoji_map_editor(emoji_map, emoji_edits)
 
-with open('emoji_mapping_secondary.json','w') as fp:
-    json.dump(updated_emoji_map, fp)
-
-emoji_edits = {}
-with open('emoji_edits.json','r', encoding="utf8") as fp:
-    emoji_edits = json.load(fp)
-fp.close()
-edited_emoji_map = emoji_map_editor(updated_emoji_map, emoji_edits)
+print(edited_emoji_map["garbage"], str(len(edited_emoji_map.keys())))
 
 with open('edited_emoji_mapping.json','w') as fp:
     json.dump(edited_emoji_map, fp)
 
+# add counts to similar words
+updated_emoji_map = nltk_word_forms_dictionary_refiner(edited_emoji_map)
+print(updated_emoji_map["garbage"], str(len(updated_emoji_map.keys())))
+
+edited_emoji_map2 = emoji_map_editor(updated_emoji_map, emoji_edits)
+print(edited_emoji_map2["garbage"], str(len(edited_emoji_map2.keys())))
+
+with open('emoji_mapping_secondary.json','w') as fp:
+    json.dump(edited_emoji_map2, fp)
+
 #probably save the following as a csv or somehow
-emoji_map_probability = emoji_probability_maker(edited_emoji_map, emoji_probability, remove_stopwords, minimum_emojis, maximum_emoji)
+emoji_map_probability = emoji_probability_maker(edited_emoji_map2, emoji_probability, remove_stopwords, minimum_emojis, maximum_emoji)
+print(emoji_map_probability["garbage"], str(len(emoji_map_probability.keys())))
 
 with open('emoji_mapping.json','w') as fp:
     json.dump(emoji_map_probability, fp)

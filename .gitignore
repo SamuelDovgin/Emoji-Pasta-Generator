@@ -3,5 +3,9 @@ info2.txt
 output.txt
 posts_replied_to.txt
 messages_replied_to.txt
-Reddit_Bot_Scripts\stored_info\info.txt
-Reddit_Bot_Scripts\stored_info\info2.txt
+Reddit_Bot_Scripts/stored_info/info.txt
+Reddit_Bot_Scripts/stored_info/info2.txt
+push_shift_reddit_posts/comments/
+push_shift_reddit_posts/posts/
+reddit_posts/posts/
+reddit_posts/comments/

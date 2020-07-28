@@ -6,6 +6,7 @@ import string
 import random
 import datetime
 import requests
+import pprint
 
 import bot_helper_functions as bot
 
@@ -21,31 +22,37 @@ REDDIT_CREDENTIALS_FILE = "stored_info/info2.txt"
 BOT_SUBREDDIT = "copypasta"
 USERNAME = "u/emojify_creator"
 
-def process_user_mention(message, objects_replied_to, emoji_map_probability):
-    if message.id not in objects_replied_to and not bot.check_banned_muted(message.subreddit):
+def process_user_mention(message, emoji_map_probability):
+    objects_replied_to = bot.load_object_from_file(PROCESSED_OBJECTS_SET)
+    parent_object_type = message.parent_id[:2]
+    parent = message.parent()
+    #print(message.id) # to make it non-lazy
+    #pprint.pprint(vars(message))
+    if message.id not in objects_replied_to and parent.id not in objects_replied_to and not bot.check_banned_muted(message.subreddit) and message.id != "fz72tok":
         print("user_mention: ", end="")
         bot.pretty_print_id_time(message)
         
-        parent_object_type = message.parent_id[:2]
-        parent = message.parent()
-        
+        emojified_id_set = None
+
         # below if runs if the object is a submission
         if parent_object_type == "t3":
             if parent.selftext != "":
-                bot.send_reply(parent.selftext, message, True, emoji_map_probability)
+                emojified_id_set = bot.send_reply(parent.selftext, message, True, emoji_map_probability)
             elif parent.title != "":
-                bot.send_reply(parent.title, message, True, emoji_map_probability)
-            objects_replied_to.add(message.id)
-            bot.append_object_to_file(PROCESSED_OBJECTS_SET, objects_replied_to)
+                emojified_id_set = bot.send_reply(parent.title, message, True, emoji_map_probability)
         
         # below if runs if the object is a comment
         elif parent_object_type == "t1":
             if(parent.body != ""):
-                bot.send_reply(parent.body, message, True, emoji_map_probability)
-            objects_replied_to.add(message.id)
-            bot.append_object_to_file(PROCESSED_OBJECTS_SET, objects_replied_to)
+                emojified_id_set = bot.send_reply(parent.body, message, True, emoji_map_probability)
+        
+        objects_replied_to.add(message.id)
+        objects_replied_to.add(parent.id)
+        new_objects_replied_to = objects_replied_to | emojified_id_set
+        bot.append_object_to_file(PROCESSED_OBJECTS_SET, new_objects_replied_to)
 
-def process_message(message, objects_replied_to, emoji_map_probability):
+def process_message(message, emoji_map_probability):
+    objects_replied_to = bot.load_object_from_file(PROCESSED_OBJECTS_SET)
     if message.id not in objects_replied_to:
         if message.subreddit != None:
             if bot.check_banned_muted(message.subreddit):
@@ -62,17 +69,15 @@ def main():
 
     emoji_map_probability = bot.get_emoji_map()
 
-    object_replied_set = bot.load_object_from_file(PROCESSED_OBJECTS_SET)
-
     for message in reddit.inbox.stream():
         if(not message.was_comment):
-            process_message(message, object_replied_set, emoji_map_probability)
+            process_message(message, emoji_map_probability)
         elif message.type == "username_mention":
-            process_user_mention(message, object_replied_set, emoji_map_probability)
+            process_user_mention(message, emoji_map_probability)
         elif message.type == "comment_reply":
             #maybe here a parent parent could be done?
             if USERNAME in message.body.lower():
-                process_user_mention(message, object_replied_set, emoji_map_probability)
+                process_user_mention(message, emoji_map_probability)
 
 if __name__ == "__main__":
     main()

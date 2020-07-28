@@ -15,6 +15,6 @@ reddit = praw.Reddit(client_id = info['appid'],
                     username = info['username'],
                     password = info['password'])
 
-subreddit = reddit.subreddit("copypasta")
-print(subreddit.user_is_banned)
+subreddit = reddit.comment("dkk4qjd")
+print(subreddit.body)
 pprint.pprint(vars(subreddit))

@@ -13,3 +13,15 @@ s3.upload_file("emoji_mapping.json",
                "emoji_mapping.json",
                ExtraArgs={'ContentType': 'text/plain',
                           'ACL':'public-read'})
+
+s3.upload_file("emoji_mapping_initial.json", 
+               "emoji-map", 
+               "emoji_mapping_initial.json",
+               ExtraArgs={'ContentType': 'text/plain',
+                          'ACL':'public-read'})
+
+s3.upload_file("emoji_mapping_secondary.json", 
+               "emoji-map", 
+               "emoji_mapping_secondary.json",
+               ExtraArgs={'ContentType': 'text/plain',
+                          'ACL':'public-read'})

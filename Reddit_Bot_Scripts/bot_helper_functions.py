@@ -72,9 +72,9 @@ def emoji_pasta_maker(raw_string, emoji_prob_map):
 
 LINK_NOTE = "\n\n^(To Emojify 😃: [message ✉ me](https://www.reddit.com/message/compose/?to=Emojify_Creator) \| comment 💬 \"!emojify\" \| comment 🗣️ )^([u\/Emojify_Creator](/user/Emojify_Creator))"
 
-#LINK_NOTE = '\n\n^(To Emojify 😃: comment 💬 "!emojify" Or [message ✉ me](https://www.reddit.com/message/compose/?to=Emojify_Creator))'
+#LINK_NOTE_LENGTH = len(LINK_NOTE)
 
-LINK_NOTE_LENGTH = len(LINK_NOTE)
+LINK_NOTE_LENGTH = 0
 
 def get_reddit_object(login_info_location):
     info = {}
@@ -107,6 +107,7 @@ def get_emoji_map():
 def send_reply(text, initial_reply_object, is_comment, emoji_map_probability):
     content = text.replace("&#x200B;", '').split('\n')
     output = ""
+    reply_id_set = set()
     for idx, val in enumerate(content):
         output += emoji_pasta_maker(val, emoji_map_probability)
         if idx != len(content) - 1:
@@ -118,8 +119,10 @@ def send_reply(text, initial_reply_object, is_comment, emoji_map_probability):
         while starting_idx < len(output):
             string_to_reply = output[starting_idx : starting_idx + MAX_COMMENT_LEN]
             if not sent_initial_reply and is_comment:
-                string_to_reply = output[starting_idx : starting_idx + MAX_COMMENT_LEN - LINK_NOTE_LENGTH] + LINK_NOTE
+                #string_to_reply = output[starting_idx : starting_idx + MAX_COMMENT_LEN - LINK_NOTE_LENGTH] + LINK_NOTE
+                string_to_reply = output[starting_idx : starting_idx + MAX_COMMENT_LEN - LINK_NOTE_LENGTH]
             comment_object = prev_comment_object.reply(string_to_reply)
+            reply_id_set.add(comment_object.id)
 
             if is_comment:
                 prev_comment_object = comment_object
@@ -131,9 +134,13 @@ def send_reply(text, initial_reply_object, is_comment, emoji_map_probability):
                 starting_idx += MAX_COMMENT_LEN
     else:
         if is_comment:
-            initial_reply_object.reply(output + LINK_NOTE)
+            #replied_to = initial_reply_object.reply(output + LINK_NOTE)
+            replied_to = initial_reply_object.reply(output)
+            reply_id_set.add(replied_to.id)
         else:
-            initial_reply_object.reply(output)
+            replied_to = initial_reply_object.reply(output)
+            reply_id_set.add(replied_to.id)
+    return reply_id_set
 
 def check_banned_muted(subreddit):
     return subreddit.user_is_banned or subreddit.user_is_muted

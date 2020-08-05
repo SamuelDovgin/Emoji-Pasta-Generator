@@ -1,0 +1,13 @@
+my_stop_words = ['me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', "you're", "you've", "you'll", 
+"you'd", 'yours', 'yourself', 'yourselves', 
+'it', "it's", 'its', 'itself', 'they', 'them', 'their', 'theirs', 'themselves', 'what', 'which', 'who', 
+'whom', 'this', 'that', "that'll", 'these', 'those', 'am', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 
+'has', 'had', 'having', 'do', 'does', 'did', 'doing', 'a', 'an', 'the', 'and', 'if', 'or', 'because', 'as', 
+'until', 'while', 'of', 'at', 'by', 'for', 'with', 'about', 'between', 'into', 'through', 'during', 
+'to', 'from', 'in', 'out', 'would', 'could' ,
+'then', 'once', 'here', 'there', 'where', 'how', 'any', 'both', 'each', 'few', 'more', 'most', 
+'other', 'some', 'such', 'nor', 'not', 'only', 'own', 'same', 'so', 'than', 'too', 's', 't', 'can', 
+'will', 'just', 'should', "should've", 'now', 'd', 'll', 'm', 'o', 're', 've', 'y', 'ain', 'aren', 
+"aren't", 'couldn', "couldn't", 'didn', "didn't", 'doesn', "doesn't", 'hadn', "hadn't", 'hasn', "hasn't", 'haven', 
+"haven't", 'isn', "isn't", 'ma', 'mightn', "mightn't", 'mustn', "mustn't", 'needn', "needn't", 'shan', "shan't", 
+'shouldn', "shouldn't", 'wasn', "wasn't", 'weren', "weren't", 'won', 'wouldn']

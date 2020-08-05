@@ -13,4 +13,9 @@ reddit = praw.Reddit(client_id = info['appid'],
                      password = info['password'])
 
 
-print(reddit.submission("hsnp8v").selftext.replace("&#x200B;", ''))
+
+#print(reddit.submission("hsnp8v").selftext.replace("&#x200B;", ''))
+temp = '👨'
+temp2 = '👨👨🙈'
+print(temp in temp2 and temp+'‍' not in temp2)
+print(temp+'‍' not in temp2)
